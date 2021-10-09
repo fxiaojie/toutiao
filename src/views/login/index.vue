@@ -116,6 +116,10 @@ export default {
 
         // 将后端返回的用户登录状态（token等信息）收到 vuex 容器中
         this.$store.commit('setUser', data.data)
+
+        // 登陆成功，返回原来页面
+        this.$router.back()
+
       } catch(err) {
         Toast.fail('登陆失败')
       }
