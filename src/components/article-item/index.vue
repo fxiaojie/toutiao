@@ -1,5 +1,13 @@
 <template>
-  <van-cell class="article-item">
+  <van-cell 
+    class="article-item" 
+    :to="{  // 跳转至文章详情页面
+      name: 'article',
+      params: {
+        articleId: item.art_id    // 路由参数
+      }
+    }"
+  >
     <!-- 文章标题 -->
     <template #title class="title van-multi-ellipsis--l2">
       {{item.title}}

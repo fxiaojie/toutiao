@@ -15,8 +15,8 @@
         @load="onLoad"
       >
         <article-item
-          v-for="item in articleList" 
-          :key="item.art_id" 
+          v-for="(item, index) in articleList" 
+          :key="index" 
           :item="item" 
         />
         <!-- <van-cell v-for="item in articleList" :key="item.art_id" :title="item.title" /> -->
