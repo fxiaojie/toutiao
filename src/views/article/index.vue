@@ -9,42 +9,53 @@
       @click-left="$router.back()"  
     />
 
-    <!-- 标题 -->
-    <h1 class="title">{{article.title}}</h1>
+    <div class="article-wrap">
+      <!-- 标题 -->
+      <h1 class="title">{{article.title}}</h1>
     
-    <!-- 作者信息 -->
-    <van-cell 
-      center 
-      :icon="article.aut_photo"
-      class="user-info"
-    >
-      <template #title>
-        <div class="name">{{article.aut_name}}</div>
-      </template>
-      <template #label>
-        <span class="pubdate">{{article.pubdate | relativeTime}}</span>
-      </template>
+      <!-- 作者信息 -->
+      <van-cell 
+        center 
+        :icon="article.aut_photo"
+        class="user-info"
+      >
+        <template #title>
+          <div class="name">{{article.aut_name}}</div>
+        </template>
+        <template #label>
+          <span class="pubdate">{{article.pubdate | relativeTime}}</span>
+        </template>
 
-      <!-- 按钮 -->
-      <van-button
-        class="follow-btn"
-        :type="article.is_followed ? 'info' : 'primary'" 
-        round 
-        :icon="article.is_followed ? '' : 'plus'"
-        size="mini"
-        :loading="isFollowLoading"
-        @click="onFollow"
-      >{{article.is_followed ? '已关注' : '关注'}}</van-button>
-    </van-cell>
+        <!-- 按钮 -->
+        <van-button
+          class="follow-btn"
+          :type="article.is_followed ? 'info' : 'primary'" 
+          round 
+          :icon="article.is_followed ? '' : 'plus'"
+          size="mini"
+          :loading="isFollowLoading"
+          @click="onFollow"
+        >{{article.is_followed ? '已关注' : '关注'}}</van-button>
+      </van-cell>
 
-    <!-- 正文 -->
-    <div
-      ref="article-content"
-      class="markdown-body" 
-      v-html="article.content"></div>
+      <!-- 正文 -->
+      <div
+        ref="article-content"
+        class="markdown-body" 
+        v-html="article.content"></div>
+      <van-cell title="全部评论"></van-cell>
+      <!-- 评论回复 -->
+      <comment-list 
+        :source="articleId" 
+        :list="commentList"
+        @updata-comments="totalComments=$event"
+        @reply-click="onReplyClick"
+      />
+    </div>
 
     <!-- 底部区域 -->
     <div class="article-bottom">
+      <!-- 发布评论 -->
       <van-button
         class="comment-btn"
         type="default"
@@ -54,23 +65,50 @@
       >写评论</van-button>
       <van-icon
         class="comment-icon"
+        :badge="totalComments"
         name="comment-o"
-        :info="totalCommentCount"
       />
+      <!-- 收藏 -->
       <van-icon
         class="btn-item"
         :color="article.is_collected ? 'orange' : '#777'"
         :name="article.is_collected ? 'star' : 'star-o'"
         @click="onCollect"
       />
+      <!-- 点赞 -->
       <van-icon
         class="btn-item"
-        :color="article.attitude === 1? 'pink' : '#777'"
-        :name="article.attitude === 1? 'like' : 'like-o'"
+        :color="article.attitude === 1 ? 'pink' : '#777'"
+        :name="article.attitude === 1 ? 'like' : 'like-o'"
         @click="onLike"
       />
       <van-icon name="share" color="#777777"></van-icon>
     </div>
+    <!-- 发布评论弹出层 -->
+    <van-popup 
+      v-model="isPostShow" 
+      position="bottom"
+    >
+      <post-comment
+        :target="articleId"
+        @post-success="addComment"
+      />
+    </van-popup>
+
+    <!-- 评论回复弹出层 -->
+    <van-popup 
+      v-model="isReplyShow" 
+      position="bottom"
+      :style="{ height: '70%' }"
+    >
+      <!-- v-if 是让组件随着弹出层的显示进行渲染和销毁，防止加载过的组件不重新渲染导致数据不会重新加载的问题 -->
+      <comment-reply
+        v-if="isReplyShow"
+        :comment="replyComment"
+        :article-id="articleId"
+        @closeReplyComment="isReplyShow=false"
+      ></comment-reply>
+    </van-popup>
   </div>
 </template>
 
@@ -79,11 +117,19 @@ import './github-markdown.css'
 import { ImagePreview } from 'vant'
 import {addFollow, deleteFollow} from '@/api/user'
 import {getArticleById, addCollect, deleteCollect, addLike, deleteLike} from '@/api/article'
+import CommentList from './components/comment-list.vue'
+import PostComment from './components/post-comment.vue'
+import CommentReply from './components/comment-reply.vue'
 
 export default {
   name: 'ArticleIndex',
+  components: {
+    CommentList,
+    PostComment,
+    CommentReply
+  },
   props: {
-    articleId: {
+    articleId: {    // 路由传值
       type: [String, Number, Object],
       required: true
     }
@@ -91,7 +137,12 @@ export default {
   data() {
     return {
       article: {},   // 文章详情
-      isFollowLoading: false
+      isFollowLoading: false,
+      isPostShow: false,   // 控制评论显示
+      commentList: [],     
+      totalComments: 0,   // 评论总数量
+      isReplyShow: false,   // 控制评论回复显示
+      replyComment: {}    // 当前评论回复
     }
   },
   methods: {
@@ -182,6 +233,25 @@ export default {
       }
 
       this.$toast.success(`${this.article.attitude === 1? '' : '取消'}点赞成功` )
+    },
+
+    // 把发布的评论添加到列表上
+    addComment(comment) {
+      // 将新评论添加到最前面
+      this.commentList.unshift(comment)
+
+      // 更新评论总数量
+      this.totalComments++
+
+      // 关闭弹窗
+      this.isPostShow = false
+    },
+
+    // 评论回复
+    onReplyClick(comment) {
+      this.replyComment = comment
+      // 显示评论回复
+      this.isReplyShow = true
     }
   },
   created() {
@@ -192,6 +262,15 @@ export default {
 
 <style scoped lang="less">
 .article-container {
+  .article-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 92px;
+    bottom: 88px;
+    overflow-y: auto;
+  }
+
   // 标题
   .title {
     font-size: 40px;
