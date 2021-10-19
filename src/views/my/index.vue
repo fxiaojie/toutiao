@@ -18,7 +18,7 @@
         <span>{{currentUser.name}}</span>   <!-- 布局未成功 -->
 
         <template #right-icon>
-          <van-button round size="small" class="update-info">编辑资料</van-button>
+          <van-button round size="small" class="update-info" to="/user/profile">编辑资料</van-button>
         </template>
       </van-cell>
 
