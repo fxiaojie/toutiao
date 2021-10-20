@@ -40,7 +40,12 @@
 
     <!-- 未登录头部 -->
     <div v-else class="not-login">
-      <div class="img" @click="$router.push('/login')">
+      <div class="img" @click="$router.push({
+        name: 'login',
+        query: {
+          redirect: '/my'
+        }
+      })">
         <img src="./mobile.png">
       </div>
       <span class="text">点击登录</span>
@@ -52,7 +57,7 @@
     </van-grid>
 
     <van-cell title="消息通知" is-link to="/" class="top-10" />
-    <van-cell title="小智同学" is-link to="/" />
+    <van-cell title="小智同学" is-link to="/user/chat" />
     <van-cell v-if="user" title="退出登录" class="logout-cell top-10" @click="onLogout" />
   </div>
 </template>

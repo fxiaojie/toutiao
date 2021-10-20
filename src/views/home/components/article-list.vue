@@ -1,5 +1,5 @@
 <template>
-  <div class="article-list">
+  <div class="article-list" ref="article-list">
     <!-- 下拉刷新 -->
     <van-pull-refresh 
       v-model="isRefreshLoading" 
@@ -29,6 +29,7 @@
 import {getArticles} from '@/api/article.js'
 // 加载 AritcleItem 组件
 import ArticleItem from '@/components/article-item/index.vue'
+import {debounce} from 'lodash'
 
 export default {
 // 该组件使用 vant 中 list列表，具体 API 在 vant 官网查看
@@ -53,7 +54,8 @@ export default {
       finished: false,   // 控制加载结束的状态，当加载结束，不再触发加载更多
       timestamp: null,   // 获取下一页数据的时间戳
       isRefreshLoading: false,   // 下拉刷新 loading 状态
-      refreshSuccessText: null    // 下拉刷新成功的文字提示
+      refreshSuccessText: null,    // 下拉刷新成功的文字提示
+      scrollTop: 0    // 列表滚动到顶部的距离
     };
   },
   methods: {
@@ -98,6 +100,18 @@ export default {
       // 下拉刷新成功的文字提示
       this.refreshSuccessText = `刷新了${data.data.results.length}数据`
     }
+  },
+
+  mounted() {
+    const articleScroll = this.$refs['article-list']
+
+    articleScroll.onscroll = debounce(() => {
+      this.scrollTop = articleScroll.scrollTop
+    }, 50)
+  },
+
+  activated() {
+    this.$refs['article-list'].scrollTop = this.scrollTop
   }
 }
 </script>

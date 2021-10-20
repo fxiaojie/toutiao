@@ -117,8 +117,12 @@ export default {
         // 将后端返回的用户登录状态（token等信息）收到 vuex 容器中
         this.$store.commit('setUser', data.data)
 
+        // 清除 layout 缓存，让他重新渲染
+        this.$store.commit('removeCachePage', 'LayoutIndex')
+
         // 登陆成功，返回原来页面
-        this.$router.back()
+        // this.$router.back()
+        this.$router.push(this.$route.query.redirect || '/')
 
       } catch(err) {
         Toast.fail('登陆失败')
